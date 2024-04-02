@@ -1,26 +1,75 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { useState, useEffect } from "react";
+import ListEditor from "./components/ListEditor";
+import ListCard from "./components/ListCard";
+import ListErrorNotification from "./components/ListErrorNotification";
+import Container from "./components/Container";
+import ListBody from "./components/ListBody";
+import { useQuery } from "react-query";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+interface Tag {
+  name: string;
+  count: number;
 }
 
-export default App;
+const selectOptions = [
+  {
+    value: "name",
+    label: "Name",
+  },
+  {
+    value: "count",
+    label: "Count",
+  },
+];
+
+const TagList = () => {
+  const [options, setOptions] = useState({ limit: 10, sortBy: "name" });
+  const [filteredTags, setFilteredTags] = useState<Tag[]>([]);
+
+  const fetchTags = async () => {
+    const response = await fetch(
+      `https://api.stackexchange.com/2.3/tags?order=desc&site=stackoverflow`
+    );
+    const data = await response.json();
+    return data.items.map((item: any) => ({
+      name: item.name,
+      count: item.count,
+    }));
+  };
+
+  const {
+    data: allTagsData,
+    isLoading: allTagsLoading,
+    isError: allTagsError,
+  } = useQuery<Tag[], Error>("allTags", fetchTags);
+
+  useEffect(() => {
+    if (!allTagsData) return;
+    let sortedTags = [...allTagsData];
+    if (options.sortBy === "name") {
+      sortedTags = sortedTags.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (options.sortBy === "count") {
+      sortedTags = sortedTags.sort((a, b) => b.count - a.count);
+    }
+    setFilteredTags(sortedTags.slice(0, options.limit));
+  }, [allTagsData, options]);
+
+  return (
+    <Container>
+      <ListEditor
+        options={options}
+        selectOptions={selectOptions}
+        setOptions={setOptions}
+      />
+      <ListCard>
+        {allTagsError ? (
+          <ListErrorNotification />
+        ) : (
+          <ListBody filteredTags={filteredTags} isLoading={allTagsLoading} />
+        )}
+      </ListCard>
+    </Container>
+  );
+};
+
+export default TagList;
