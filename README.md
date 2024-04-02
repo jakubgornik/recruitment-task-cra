@@ -1,3 +1,7 @@
+# This project uses CRA, it's a migration from the same project developed with Vite
+
+You can find the same project built with React + Vite in this repo: https://github.com/jakubgornik/recruitment-task
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
